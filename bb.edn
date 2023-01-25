@@ -1,0 +1,13 @@
+{
+ :paths ["src/bb"]
+ :deps {#_#_borg-backup/borg-backup {:local/root "./src/bb/"}
+        #_#_org.clojure/core.memoize {:mvn/version "1.0.257"}}
+  :tasks {:requires [[borg-backup]]
+          backup (borg-backup/prune-and-backup-w-args! *command-line-args*)
+          ;; repo-do
+          ;; examples: bb repo-do list, bb repo-do compact
+          repo-do (borg-backup/do-to-repo! (first *command-line-args*))
+          ;; delete
+          ;; example: bb delete --prod 2023-01-25T15-53-17
+          delete (borg-backup/delete-bkp! *command-line-args*)}
+ }

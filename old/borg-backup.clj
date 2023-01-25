@@ -1,11 +1,17 @@
-#!/????/bb
-
-(require '[clojure.edn :as edn]
-         '[clojure.pprint :as pp]
-         '[clojure.java.io :as io]
-         '[clojure.tools.cli :as cli]
-         '[clojure.java.shell :refer [sh]]
-         '[clojure.stacktrace :as stacktrace])
+;; #!/????/bb
+(ns borg-backup
+  (:require [clojure.edn :as edn]
+            [clojure.pprint :as pp]
+            [clojure.java.io :as io]
+            [clojure.tools.cli :as cli]
+            [clojure.java.shell :refer [sh]]
+            [clojure.stacktrace :as stacktrace]))
+;; (require '[clojure.edn :as edn]
+;;          '[clojure.pprint :as pp]
+;;          '[clojure.java.io :as io]
+;;          '[clojure.tools.cli :as cli]
+;;          '[clojure.java.shell :refer [sh]]
+;;          '[clojure.stacktrace :as stacktrace])
 
 (def home-dir "/Users/???")
 (def borg-cmd (str home-dir "/dev/proggies/BorgBackup-1/borg-macosx64"))
