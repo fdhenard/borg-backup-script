@@ -2,13 +2,27 @@
 
 [toc]
 
+## prerequisites
+
+- install [babashka](https://github.com/babashka/babashka#installation)
+- config file 
+    - .edn file
+    
+        ```clojure
+        {:repo-path "/path/to/repo"
+         :patterns-path "/path/to/borg_patterns.lst"
+         :dir-to-backup "/path/to/backup"
+        ```
+
+    - set environment variable `BORG_BB_CONFIG_PATH`
+
 ## backup
 
 - plug in ext hd
 - this
 
    ```
-   cd dev/repos/borg-backup-script
+   cd ~/dev/repos/borg-backup-script
    bb backup
    ```
    

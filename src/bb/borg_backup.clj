@@ -1,14 +1,14 @@
 (ns borg-backup
   (:require [clojure.edn :as edn]
-            #_[clojure.java.shell :refer [sh]]
             [clojure.pprint :as pp]
-            #_[clojure.core.memoize :as memo]
-            [babashka.process :as p :refer [process sh #_shell]]))
+            [babashka.process :as p :refer [sh]]))
 
 
 (defn config []
   (let [path (System/getenv "BORG_BB_CONFIG_PATH")]
     (-> path slurp edn/read-string)))
+
+;; 1/26/23 - clojure.core.memoize is not yet available for bb
 ;; (def config
 ;;   (memo/ttl config* :ttl/threshold 30)) ;; 30 seconds
 
@@ -16,9 +16,7 @@
 
   (config)
 
-  ;; (shell/shell "echo hello")
-  ;; (sh "echo hello")
-  (process "echo hello")
+  (p/process "echo hello")
 
   (sh "echo hello")
 
@@ -33,7 +31,6 @@
 
 
 (defn prune! [is-prod?]
-  ;; borg prune -v --list --dry-run --keep-daily 7 --keep-weekly 4 /Volumes/Ext_HD_2TB/frank/borg-repo-mbpro2020
   (let [_ (println "running prune")]
     (my-sh "borg" "prune"
            "-v"
@@ -66,7 +63,6 @@
   (str (:repo-path (config)) "::" bkp-name))
 
 (defn backup! [is-prod?]
-  ;; borg create --patterns-from ~/Documents/borg_patterns.lst --dry-run --list /Volumes/Ext_HD_2TB/frank/borg-repo-mbpro2020::2023-01-25T11-01 ~/Documents
   (let [_ (println "running backup")
         curr-run-time
         (-> (java.time.ZonedDateTime/now)
@@ -84,7 +80,7 @@
 
 (comment
 
-  (backup! true)
+  (backup! false)
 
   )
 
@@ -97,7 +93,7 @@
 
 (comment
 
-  (prune-and-backup! true)
+  (prune-and-backup! false)
 
   )
 
@@ -125,7 +121,7 @@
         is-prod? (contains? args-set "--prod")
         remaining (disj args-set "--prod")
         _ (when-not (= 1 (count remaining))
-            (throw (ex-info "expecting exaclty one backup name" {:args args})))
+            (throw (ex-info "expecting exactly one backup name" {:args args})))
         bkp-name (first remaining)
         bkp-target (bkp-name->target bkp-name)
         _ (println "deleting")
