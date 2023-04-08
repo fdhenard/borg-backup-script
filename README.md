@@ -23,7 +23,8 @@
 
    ```
    cd ~/dev/repos/borg-backup-script
-   bb backup
+   bb backup # this is a dry run - shows what will happen
+   bb backup prod
    ```
    
 ## other commands
@@ -33,3 +34,19 @@
 - delete 
 	- dry run `bb delete-backup backup-name`
 	- prod `bb delete-backup --prod backup-name`
+
+## commonly used plain borg commands
+
+### prereq - show repo path
+
+- `$ cat $BORG_BB_CONFIG_PATH`
+- look at `:repo-path` property
+
+### common commands
+
+```sh
+# show backup names (datetime)
+bb repo-do list
+borg list <repo-path>::<datetime>
+borg info <repo-path>::<datetime>
+```
