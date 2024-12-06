@@ -68,15 +68,16 @@
         (-> (java.time.ZonedDateTime/now)
             (.withZoneSameInstant chicago-tz))
         bkp-tgt (bkp-name->target (time->file-nameable-str curr-run-time))
-        _ (println (with-out-str (pp/pprint {:is-prod? is-prod?
-                                             :bkp-tgt bkp-tgt})))]
-    (my-sh "borg" "create"
-           "--patterns-from" (:patterns-path (config))
-           (when-not is-prod?
-             "--dry-run")
-           "--list"
-           bkp-tgt
-           (:dir-to-backup (config)))))
+        _ (pp/pprint {:is-prod? is-prod?
+                      :bkp-tgt bkp-tgt})
+        sh-args ["borg" "create"
+                 "--patterns-from" (:patterns-path (config))
+                 (when-not is-prod?
+                   "--dry-run")
+                 "--list"
+                 bkp-tgt
+                 (:dir-to-backup (config))]]
+    (apply sh (remove nil? sh-args))))
 
 (comment
 

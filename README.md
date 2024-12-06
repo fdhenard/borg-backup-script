@@ -9,12 +9,19 @@
     - .edn file
     
         ```clojure
-        {:repo-path "/path/to/repo"
-         :patterns-path "/path/to/borg_patterns.lst"
-         :dir-to-backup "/path/to/backup"
+        {
+            :repo-path "/path/to/repo"
+            :patterns-path "/path/to/borg_patterns.lst"
+            :dir-to-backup "/path/to/backup"
+        }
         ```
 
     - set environment variable `BORG_BB_CONFIG_PATH`
+- initial create of borg repo
+
+  ```shell
+  $ borg init --encryption=none /path/to/repo
+  ```
 
 ## backup
 
