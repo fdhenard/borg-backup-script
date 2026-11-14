@@ -25,7 +25,11 @@
   )
 
 (defn my-sh [& args]
-  (let [{:keys [exit] :as res} (apply sh (remove nil? args))]
+  (let [[opts args] (if (map? (first args))
+                      [(first args) (rest args)]
+                      [{} args])
+        {:keys [exit] :as res} (apply sh (merge {:out :inherit :err :inherit} opts)
+                                     (remove nil? args))]
     (if (= 0 exit)
       res
       (throw (ex-info "error" res)))))
@@ -87,18 +91,13 @@
   )
 
 (defn prune-and-backup! [is-prod?]
-  (let [bkp-res (backup! is-prod?)
-        _ (println "bkp out:" (:out bkp-res))
-        _ (println "bkp err:" (:err bkp-res))
-        prune-res (prune! is-prod?)
-        _ (println "prune out:" (:out prune-res))
-        _ (println "prune err:" (:err prune-res))]
-    (if is-prod?
-      (let [_ (println "running compact")
-            compact-res (my-sh "borg" "compact" (:repo-path (config)))]
-        (println "compact out:" (:out compact-res))
-        (println "compact err:" (:err compact-res)))
-      (println "skipping compact in dry run"))))
+  (backup! is-prod?)
+  (prune! is-prod?)
+  (if is-prod?
+    (do
+      (println "running compact")
+      (my-sh "borg" "compact" (:repo-path (config))))
+    (println "skipping compact in dry run")))
 
 (comment
 
@@ -118,7 +117,7 @@
   (let [repo-path (:repo-path (config))
         archive (if (= "latest-backup" backup-name)
                   (str/trim
-                   (:out (my-sh "borg" "list" "--short" "--sort-by" "timestamp"
+                   (:out (my-sh {:out :string} "borg" "list" "--short" "--sort-by" "timestamp"
                                 "--last" "1" repo-path)))
                   backup-name)]
     (when-not (seq archive)
@@ -131,11 +130,9 @@
   (when-not (= (count args) (if (= "list-files" arg) 1 0))
     (throw (ex-info "expected: repo-do <command>, or repo-do list-files <backup-name|latest-backup>"
                     {:command arg :args args})))
-  (let [do-res (if (= "list-files" arg)
-                 (list-files! (first args))
-                 (my-sh "borg" arg (:repo-path (config))))
-          _ (println (str "out:\n" (:out do-res)))
-          _ (println (str "err:\n" (:err do-res)))]))
+  (if (= "list-files" arg)
+    (list-files! (first args))
+    (my-sh "borg" arg (:repo-path (config)))))
 
 (comment
 
@@ -157,6 +154,5 @@
         del-res (my-sh "borg" "delete"
                        (when-not is-prod?
                          "--dry-run")
-                       bkp-target)
-        _ (println (str "out:\n" (:out del-res)))
-        _ (println (str "err:\n" (:err del-res)))]))
+                       bkp-target)]
+    del-res))
