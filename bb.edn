@@ -5,8 +5,8 @@
   :tasks {:requires [[borg-backup]]
           backup (borg-backup/prune-and-backup-w-args! *command-line-args*)
           ;; repo-do
-          ;; examples: bb repo-do list, bb repo-do compact
-          repo-do (borg-backup/do-to-repo! (first *command-line-args*))
+          ;; examples: bb repo-do list, bb repo-do list-files latest-backup
+          repo-do (apply borg-backup/do-to-repo! *command-line-args*)
           ;; delete
           ;; example: bb delete --prod 2023-01-25T15-53-17
           delete (borg-backup/delete-bkp! *command-line-args*)}
