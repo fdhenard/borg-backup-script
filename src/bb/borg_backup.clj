@@ -2,6 +2,7 @@
   (:require [clojure.edn :as edn]
             [clojure.pprint :as pp]
             [clojure.string :as str]
+            [babashka.fs :as fs]
             [babashka.process :as p :refer [sh]]))
 
 
@@ -111,18 +112,56 @@
         _ (println "is prod = " is-prod?)]
     (prune-and-backup! is-prod?)))
 
-(defn list-files! [backup-name]
+(defn archive-target [repo-path backup-name]
   (when-not (seq backup-name)
     (throw (ex-info "expected a backup name or latest-backup" {})))
-  (let [repo-path (:repo-path (config))
-        archive (if (= "latest-backup" backup-name)
+  (let [archive (if (= "latest-backup" backup-name)
                   (str/trim
                    (:out (my-sh {:out :string} "borg" "list" "--short" "--sort-by" "timestamp"
                                 "--last" "1" repo-path)))
                   backup-name)]
     (when-not (seq archive)
       (throw (ex-info "repository has no backups" {:repo-path repo-path})))
-    (my-sh "borg" "list" (str repo-path "::" archive))))
+    (str repo-path "::" archive)))
+
+(defn list-files! [backup-name]
+  (my-sh "borg" "list" (archive-target (:repo-path (config)) backup-name)))
+
+(defn restore-destination! [path]
+  (let [destination (fs/absolutize path)]
+    (when-not (or (fs/exists? destination) (fs/sym-link? destination))
+      (fs/create-dirs destination))
+    (when (or (fs/sym-link? destination)
+              (not (fs/directory? destination))
+              (seq (fs/list-dir destination)))
+      (throw (ex-info "Restore destination must be an empty directory"
+                      {:destination (str destination)})))
+    (str destination)))
+
+(defn restore! [& [option path backup-name & paths]]
+  (let [usage "Usage: bb restore --to <directory> [backup-name|latest-backup [archive-path ...]]"]
+    (if (= "--help" option)
+      (println usage)
+      (do
+        (when (or (not= "--to" option) (str/blank? path) (str/starts-with? path "--"))
+          (throw (ex-info usage {})))
+        (let [repo-path (:repo-path (config))
+              ;; Borg treats a colon before the first slash as a remote host or URL.
+              repo-path (if (re-find #"^[^/]+:" repo-path)
+                          repo-path
+                          (str (fs/absolutize repo-path)))
+              target (archive-target repo-path (or backup-name "latest-backup"))
+              destination (restore-destination! path)]
+          (println "Extracting to" destination)
+          (flush)
+          (try
+            (apply my-sh {:dir destination :in :inherit} "borg" "extract" "--progress" "--"
+                   target paths)
+            (catch Exception e
+              (throw (ex-info (str "Restore did not finish successfully. Check Borg's output. "
+                                   "Any extracted files are in " destination)
+                              {:destination destination} e))))
+          (println "Restore complete. Files are in" destination))))))
 
 (defn do-to-repo! [arg & args]
   (when (= "delete" arg)

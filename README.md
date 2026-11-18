@@ -43,6 +43,29 @@ disk space. Each step runs only if the preceding step exits successfully
 compaction. Because the preview does not create an archive, its pruning
 preview uses only the archives already in the repository.
    
+## restore
+
+Run these commands from the script checkout with `BORG_BB_CONFIG_PATH` set.
+The `--to` option is required. Choose a new directory or an existing empty
+directory. The script creates missing directories and rejects non-empty
+destinations.
+
+```sh
+# Restore the newest archive
+bb restore --to ~/restores/latest
+
+# Restore a specific archive
+bb restore --to ~/restores/january 2023-01-25T15-53-17
+
+# Restore selected files or directories
+bb restore --to ~/restores/selected latest-backup 'home/user/Documents' 'home/user/Pictures'
+```
+
+Use `bb repo-do list` for archive names and `bb repo-do list-files latest-backup`
+for paths as stored in the archive. The restore preserves the archived
+directory structure under the destination and prints its full path. If Borg
+reports a warning or error, the destination may contain a partial restore.
+
 ## other commands
 
 - list backups `bb repo-do list`
