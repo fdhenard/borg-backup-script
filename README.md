@@ -17,7 +17,7 @@
         ```
 
     - set environment variable `BORG_BB_CONFIG_PATH`
-- initial create of borg repo
+- optional manual initialization of a Borg repository
 
   ```shell
   $ borg init --encryption=none /path/to/repo
@@ -34,14 +34,20 @@
    bb backup prod
    ```
 
-`bb backup prod` creates a backup, then prunes old archives using the
+`bb backup prod` initializes a missing local repository with
+`--encryption=none`. The repository's parent directory must already exist.
+Initialize the repository manually first if you want encryption or use a
+remote repository.
+
+The production run creates a backup, then prunes old archives using the
 7 daily / 4 weekly retention rules, then compacts the repository to reclaim
 disk space. Each step runs only if the preceding step exits successfully
 (exit code 0); a backup warning or error stops pruning and compaction.
 
-`bb backup` previews backup creation and pruning with `--dry-run` and skips
-compaction. Because the preview does not create an archive, its pruning
-preview uses only the archives already in the repository.
+`bb backup` previews which files would be backed up and skips compaction.
+If the configured local repository path is missing, it skips the pruning
+preview. The dry run skips repository initialization. When pruning is
+previewed, the retention rules apply only to archives already in the repository.
    
 ## restore
 

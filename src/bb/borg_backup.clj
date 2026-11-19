@@ -92,13 +92,22 @@
   )
 
 (defn prune-and-backup! [is-prod?]
-  (backup! is-prod?)
-  (prune! is-prod?)
-  (if is-prod?
-    (do
-      (println "running compact")
-      (my-sh "borg" "compact" (:repo-path (config))))
-    (println "skipping compact in dry run")))
+  (let [repo-path (:repo-path (config))
+        missing-local-repo? (and (not (re-find #"^[^/]+:" repo-path))
+                                 (not (fs/exists? repo-path))
+                                 (not (fs/sym-link? repo-path)))]
+    (when (and is-prod? missing-local-repo?)
+      (println "initializing repository at" repo-path)
+      (my-sh "borg" "init" "--encryption=none" "--" repo-path))
+    (backup! is-prod?)
+    (if (and (not is-prod?) missing-local-repo?)
+      (println "skipping prune in dry run: repository path does not exist:" repo-path)
+      (prune! is-prod?))
+    (if is-prod?
+      (do
+        (println "running compact")
+        (my-sh "borg" "compact" repo-path))
+      (println "skipping compact in dry run"))))
 
 (comment
 
